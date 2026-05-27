@@ -1,0 +1,631 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如果你是水滸人物：在不公社會中的生存抉擇</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- QR Code 生成庫 (QRCode.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Noto Serif TC', 'serif'],
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                    },
+                    colors: {
+                        ink: {
+                            900: '#0f172a',
+                            800: '#1a2a44', // 深墨藍
+                            100: '#f1f5f9',
+                            50: '#fcfaf2',  // 宣紙暖白
+                        },
+                        vermilion: {
+                            DEFAULT: '#a83232', // 朱砂紅
+                            dark: '#872525',
+                            light: '#fdeeed'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .ink-bg {
+            background-color: #fcfaf2;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(26, 42, 68, 0.04) 0%, transparent 60%),
+                radial-gradient(circle at 90% 90%, rgba(168, 50, 50, 0.04) 0%, transparent 60%);
+        }
+        @keyframes subtle-drift {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .ink-drift {
+            animation: subtle-drift 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="ink-bg font-sans text-ink-900 min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+
+    <!-- 主測驗容器 -->
+    <div class="w-full max-w-3xl bg-white border border-stone-200 rounded-2xl shadow-xl overflow-hidden relative min-h-[650px] flex flex-col justify-between">
+        
+        <!-- 頂部宣傳與裝飾條 -->
+        <div class="h-2.5 bg-gradient-to-r from-ink-800 via-vermilion to-ink-800"></div>
+
+        <!-- 1. 開始畫面 -->
+        <div id="start-screen" class="p-8 md:p-12 flex flex-col items-center justify-center text-center my-auto">
+            <div class="mb-4 text-vermilion ink-drift text-6xl">
+                <i class="fa-solid fa-brush"></i>
+            </div>
+            <h1 class="font-serif font-bold text-3xl md:text-5xl text-ink-800 mb-4 tracking-wide leading-tight">
+                如果你是水滸人物：<br><span class="text-vermilion">在不公社會中的生存抉擇</span>
+            </h1>
+            <p class="text-stone-500 font-serif italic mb-8 text-sm md:text-base">
+                —— 測出你的水滸靈魂原型、心理防禦機制與現代生存策略
+            </p>
+            <div class="bg-ink-50 p-6 rounded-xl border border-stone-100 text-left max-w-lg text-stone-600 mb-8 space-y-3 text-sm md:text-base">
+                <p>我們將《水滸傳》中六大核心英雄——<strong>宋江、吳用、林沖、魯智深、楊志、史進</strong> 的性格特質進行重構，設計了 10 個貼近現代生活的壓力情境（如校園霸凌、職場內鬥、人際背叛等）。</p>
+                <p>回答這些問題，我們將精準計算你的選擇流派，並剖析你的<strong>生存本能、心理機制與盲點</strong>。</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center items-center">
+                <button onclick="startQuiz()" class="px-10 py-4 bg-vermilion hover:bg-vermilion-dark text-white font-bold font-serif text-lg rounded-full transition duration-300 shadow-md hover:shadow-lg w-full max-w-xs tracking-widest">
+                    開 始 測 驗
+                </button>
+                <button onclick="toggleQRModal(true)" class="px-6 py-4 bg-ink-800 hover:bg-ink-900 text-white font-bold font-serif text-base rounded-full transition duration-300 shadow-md hover:shadow-lg w-full max-w-xs tracking-widest flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-qrcode"></i> 獲取此網頁 QR Code
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 測驗問題畫面 -->
+        <div id="quiz-screen" class="hidden p-6 md:p-10 flex-col justify-between flex-grow">
+            <!-- 進度條 -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-semibold inline-block py-1 px-3 uppercase rounded-full text-vermilion bg-vermilion-light font-serif">
+                        挑戰情境 <span id="current-q-num">1</span>
+                    </span>
+                    <span class="text-xs font-semibold inline-block text-ink-800" id="progress-text">
+                        1 / 10
+                    </span>
+                </div>
+                <div class="overflow-hidden h-1.5 mb-6 text-xs flex rounded bg-stone-100">
+                    <div id="progress-bar" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-vermilion transition-all duration-300" style="width: 10%"></div>
+                </div>
+                
+                <!-- 問題描述 -->
+                <h3 class="font-serif font-bold text-lg md:text-xl text-ink-800 mb-6 leading-relaxed" id="question-text">
+                    問題載入中...
+                </h3>
+            </div>
+
+            <!-- 選項列表 -->
+            <div class="space-y-3.5 my-4" id="options-container">
+                <!-- 選項會在此處動態渲染 -->
+            </div>
+
+            <!-- 底部提示 -->
+            <div class="flex justify-between items-center text-xs text-stone-400 mt-4 border-t border-stone-100 pt-4">
+                <span>請憑藉第一直覺做出抉擇</span>
+                <span class="font-serif">選項順序已隨機打亂</span>
+            </div>
+        </div>
+
+        <!-- 3. 結果畫面 -->
+        <div id="result-screen" class="hidden p-6 md:p-10 flex-col items-center justify-between flex-grow">
+            <div class="text-center w-full">
+                <span class="text-xs font-semibold inline-block py-1.5 px-4 uppercase rounded-full text-white bg-vermilion mb-4 tracking-widest font-serif">
+                    生存人格分析報告
+                </span>
+                <p class="text-stone-500 font-serif text-sm mb-1">你的靈魂水滸英雄原型</p>
+                <h2 class="font-serif font-bold text-4xl text-ink-800 mb-2" id="result-archetype">
+                    載入中...
+                </h2>
+                <p class="text-vermilion font-serif font-bold text-lg mb-6" id="result-nickname">
+                    外號：載入中
+                </p>
+
+                <!-- 分數分布長條分析 -->
+                <div class="bg-stone-50 p-4 rounded-xl border border-stone-100 mb-6 text-left">
+                    <h4 class="text-xs font-bold text-stone-500 mb-3 uppercase tracking-wider">你的性格因子傾向</h4>
+                    <div class="grid grid-cols-2 gap-3" id="score-analysis-bars">
+                        <!-- 由 JS 生成各角色得分佔比 -->
+                    </div>
+                </div>
+
+                <!-- 心理防禦機制 & 分析 -->
+                <div class="bg-ink-50 p-6 rounded-xl border border-stone-200 text-left mb-6 space-y-4">
+                    <div>
+                        <span class="text-xs font-bold text-white bg-ink-800 px-2 py-0.5 rounded">
+                            內在特質與現代解析
+                        </span>
+                        <p class="text-stone-600 mt-2.5 text-sm md:text-base leading-relaxed" id="result-analysis">
+                            載入中
+                        </p>
+                    </div>
+                    <hr class="border-stone-200">
+                    <div>
+                        <span class="text-xs font-bold text-white bg-vermilion px-2 py-0.5 rounded">
+                            潛在性格盲點
+                        </span>
+                        <p class="text-stone-600 mt-2 text-sm leading-relaxed" id="result-weakness">
+                            載入中
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 現代調適建議 -->
+                <div class="bg-vermilion-light border border-vermilion/10 p-5 rounded-xl text-left mb-8">
+                    <h4 class="font-serif font-bold text-vermilion text-sm mb-1.5">給現代你的「生存調適建議」</h4>
+                    <p class="text-stone-700 text-sm leading-relaxed" id="result-advice">
+                        載入中
+                    </p>
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="w-full flex flex-col sm:flex-row gap-3">
+                <button onclick="shareResult()" class="flex-1 py-3.5 bg-ink-800 hover:bg-ink-900 text-white font-bold rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-nodes"></i> 複製性格報告
+                </button>
+                <button onclick="restartQuiz()" class="flex-1 py-3.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-lg transition duration-200">
+                    重新測驗
+                </button>
+            </div>
+        </div>
+
+        <!-- 底部版權 -->
+        <div class="p-4 bg-stone-50 border-t border-stone-100 text-center text-xs text-stone-400 font-serif">
+            《如果你是水滸人物》大專生自主學習研究小組 著作所有
+        </div>
+    </div>
+
+    <!-- ================= QR CODE 彈出視窗模態框 ================= -->
+    <div id="qrcode-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center shadow-2xl border border-stone-200 flex flex-col items-center">
+            <h3 class="font-serif font-bold text-xl text-ink-800 mb-2">掃描即刻做測驗</h3>
+            <p class="text-xs text-stone-500 mb-6">觀眾只需使用手機相機掃描下方條碼，即可開啟本測驗</p>
+            
+            <!-- QR Code 容器 -->
+            <div id="qrcode" class="p-4 bg-white border-2 border-stone-100 rounded-xl shadow-inner mb-6"></div>
+            
+            <!-- 目前網址顯示 -->
+            <div class="bg-stone-50 border border-stone-200 px-4 py-2 rounded-lg text-xs text-stone-600 select-all font-mono mb-6 max-w-full truncate" id="current-url-display">
+                正在取得目前網址...
+            </div>
+
+            <div class="flex gap-3 w-full">
+                <button onclick="copyCurrentUrl()" class="flex-grow py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-sm rounded-lg transition">
+                    <i class="fa-regular fa-copy"></i> 複製網址
+                </button>
+                <button onclick="toggleQRModal(false)" class="flex-grow py-2.5 bg-vermilion hover:bg-vermilion-dark text-white font-bold text-sm rounded-lg transition">
+                    關閉視窗
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自訂 Toast 提示框 -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-ink-800 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2 z-50">
+        <i class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toast-text">複製成功！</span>
+    </div>
+
+    <script>
+        // 10 題完整的測驗題目
+        const questions = [
+            {
+                id: 1,
+                text: "【題目一：職場/校園的不公義事件】<br>情境：主管（或教授）把原本屬於你或你朋友的功勞，硬生生給了另一個只會拍馬屁的同事。這時你會怎麼做？",
+                options: [
+                    { text: "私下好好安慰受委屈的朋友，自掏腰包請大家吃飯，試圖用個人魅力來凝聚大家的情感。", type: "A" },
+                    { text: "表面上裝作沒事，但私下開始默默收集主管的把柄、分析派系，準備在最關鍵的時刻給他致命一擊。", type: "B" },
+                    { text: "先忍下來，勸朋友也別衝動。留得青山在，不怕沒柴燒，凡事以大局與體制為重。", type: "C" },
+                    { text: "直接拍桌子衝進辦公室找主管理論！這種不公不義的事情，就算工作不要了也必須討回公道。", type: "D" },
+                    { text: "心裡非常鬱卒，覺得自己怎麼這麼倒楣、懷才不遇，但為了自己的前途，還是會咬牙把手頭工作做好，期望有天被更高層看見。", type: "E" },
+                    { text: "氣得要命，馬上在社群平台上發文痛罵，或者找一堆兄弟出來喝酒解愁，大喊「這爛地方老子不待了！」", type: "F" }
+                ]
+            },
+            {
+                id: 2,
+                text: "【題目二：團隊分工與定位】<br>情境：小組要進行一項大專案（或創業），在團隊中，你通常最想擔任什麼樣的角色？",
+                options: [
+                    { text: "負責統合所有人意見、發放福利、當大家的精神領袖與對外公關發言人。", type: "A" },
+                    { text: "隱身在幕後負責規劃大方向、分析數據、出謀劃策的首席大智囊。", type: "B" },
+                    { text: "技術最強、最穩定，交給我的硬任務絕對百分之百完美達成的核心執行者。", type: "C" },
+                    { text: "充滿熱血與幹勁，負責衝第一線、開疆闢土，專門解決最棘手突發狀況的先鋒。", type: "D" },
+                    { text: "嚴格控管每一個細節與品質，雖然壓力很大、容易焦慮，但絕對不允許出任何差錯的 PM（專案經理）。", type: "E" },
+                    { text: "雖然經驗可能不夠，但因為對這件事超有熱情，願意為了好玩、好朋友而全心投入的衝鋒隊員。", type: "F" }
+                ]
+            },
+            {
+                id: 3,
+                text: "【題目三：遭遇重大挫折的心態】<br>情境：你準備了很久的國考/重要面試，因為不可抗力的意外（例如主辦單位疏失）導致你落榜、心血全毀，這時你的第一反應是？",
+                options: [
+                    { text: "第一時間跟關心我的朋友、家人道歉，覺得辜負了大家的期待，並尋求大家的陪伴與安慰。", type: "A" },
+                    { text: "雖然很失望，但馬上開始思考這件事背後有沒有其他利益操作？或者有沒有法規漏洞可以讓我申訴翻盤？", type: "B" },
+                    { text: "算了吧，這就是命。默默收拾行李回家，繼續過原本的生活，等待下一次機會。", type: "C" },
+                    { text: "既然這個體制這麼爛，那老子也不玩了！直接換個跑道，搞不好去流浪或做粗活還比較痛快。", type: "D" },
+                    { text: "天意弄人！為什麼我的人生總是這麼坎坷？（陷入嚴重的自我懷疑與焦慮，但還是放不下對成功的執念）。", type: "E" },
+                    { text: "痛哭一場或大鬧一場，然後很快就被別的新鮮事吸引，或者被朋友一招就跑去幹別的事了。", type: "F" }
+                ]
+            },
+            {
+                id: 4,
+                text: "【題目四：金錢與人情世故】<br>情境：一個交情還算可以的朋友突然開口跟你借一筆為數不小的錢（大約是你一個月的薪水/生活費），說家裡有急事。你會怎麼做？",
+                options: [
+                    { text: "只要能幫一定幫，甚至會主動幫他想辦法、介紹其他資源，藉此鞏固這份人情。", type: "A" },
+                    { text: "會幫，但會私下偷偷調查他是不是真的遇到困難，並在心中計算這筆錢拿不拿得回來、以及未來的利害關係。", type: "B" },
+                    { text: "面露難色，開始計算自己的房租、生活費，在確保自己絕對安全的情況下，才可能勉為其難借他一點點。", type: "C" },
+                    { text: "如果覺得他是好人，就算自己把口袋掏空、去跟別人借，也一定要幫他把事情擺平。", type: "D" },
+                    { text: "內心極度糾結和焦慮，怕被騙又怕得罪人，最後可能找藉口婉拒或只給極少額。", type: "E" },
+                    { text: "沒問題！既然是兄弟開口，二話不說立刻轉帳，甚至還會問他夠不夠。", type: "F" }
+                ]
+            },
+            {
+                id: 5,
+                text: "【題目五：馬路上的突發衝突】<br>情境：你在路上開車/騎車（或走路）時，被別人惡意逼車或是莫名其妙狠狠瞪了一眼，你會？",
+                options: [
+                    { text: "息事寧人，甚至向對方微笑點頭致意，多一事不如少一事，安全回家、維持良好形象最重要。", type: "A" },
+                    { text: "不當面衝突，但默默記下車牌，回家用檢舉一條龍或法律途徑搞死他。", type: "B" },
+                    { text: "默默讓開，雖然心裡很不爽，但選擇忍耐，覺得跟這種沒素質的人計較是浪費時間。", type: "C" },
+                    { text: "直接搖下車窗或停下來，當場跟對方大聲理論，絕對不吃這悶虧。", type: "D" },
+                    { text: "內心燃起熊熊怒火，一邊碎碎念抱怨今天怎麼這麼倒楣，一邊尋求機會在速限內惡意超車報復。", type: "E" },
+                    { text: "血氣方剛，立刻按長喇叭回敬，甚至不自覺想揪朋友一起追上去理論。", type: "F" }
+                ]
+            },
+            {
+                id: 6,
+                text: "【題目六：挑選工作或職涯發展】<br>情境：在選擇一份新工作或未來發展時，你最看重的是什麼？",
+                options: [
+                    { text: "公司的名聲、職位能帶來的社會地位，以及能在這裡建立的政商/人脈網絡。", type: "A" },
+                    { text: "工作是否有高度的自主性，能否發揮我的智力、策略與掌控大局的權力。", type: "B" },
+                    { text: "是否穩定、有保障，能讓我安分守己地發揮專業技術，最好不要有太多辦公室政治。", type: "C" },
+                    { text: "自由度！不能有太多繁文縟節 and KPI 綁死我，同事之間要真誠，做起來要痛快。", type: "D" },
+                    { text: "證明自己能力的機會、翻身的可能性，以及是否能讓我重回或進入核心階層。", type: "E" },
+                    { text: "工作氣氛要好、要好玩，主管最好跟兄弟一樣，能跟志同道合的夥伴一起拼搏。", type: "F" }
+                ]
+            },
+            {
+                id: 7,
+                text: "【題目七：掌握了高層的驚天大八卦】<br>情境：你無意間得知了某個高層主管、教授或地方大老不可告人的醜聞秘密，你會怎麼處理？",
+                options: [
+                    { text: "表面裝作不知道，但私下在適當時機釋出善意關心，讓高層覺得你是「自己人」。", type: "A" },
+                    { text: "秘密存檔、收集證據，當作未來的政治籌碼，在最關鍵的時刻用來保障自己或換取利益。", type: "B" },
+                    { text: "嚇出一身冷汗，絕對閉口不談，甚至希望自己從來沒有聽過這個秘密，離風暴越遠越好。", type: "C" },
+                    { text: "覺得這人真噁心，忍不住會跟關係最好的朋友瘋狂吐槽，完全藏不住對偽君子的鄙視。", type: "D" },
+                    { text: "內心很焦慮，怕被捲入政治鬥爭，但又忍不住幻想這個秘密會不會是自己升遷翻盤的轉機。", type: "E" },
+                    { text: "大吃一驚，下班後立刻在好朋友的私密群組裡當作猛料分享：「欸！我跟你們說一個超扯的事！」", type: "F" }
+                ]
+            },
+            {
+                id: 8,
+                text: "【題目八：主辦一場大型社交活動】<br>情境：如果今天由你來主辦一場班級聚會、公司尾牙或跨年派對，你會怎麼規劃？",
+                options: [
+                    { text: "擔任總招待，到處敬酒、照顧到每一個人的情緒，確保大家都賓至如歸、滿意離場。", type: "A" },
+                    { text: "負責幕後流程設計、精準的預算控管、座位安排，確保一切按照精密計劃完美進行。", type: "B" },
+                    { text: "默默在台下幫忙布置會場、搬桌椅、訂便當，做最基層但不可或缺的苦力，不求表揚。", type: "C" },
+                    { text: "負責炒熱氣氛、帶頭大口喝酒大口吃肉，把現場氣氛嗨到最高點。", type: "D" },
+                    { text: "瘋狂擔心這個沒做好、那個出紕漏，整場聚會都緊繃著臉在巡視，給自己極大壓力。", type: "E" },
+                    { text: "提議各種瘋狂好玩的喝酒遊戲或續攤計畫，自己玩得比誰都瘋。", type: "F" }
+                ]
+            },
+            {
+                id: 9,
+                text: "【題目九：朋友深陷危險誘惑】<br>情境：你發現最好的朋友最近沉迷於一個明顯是詐騙的投資坑，或是交往了一個爛人，你會？",
+                options: [
+                    { text: "動用所有人脈幫他查證，並溫和地拉著其他朋友一起勸他，給他留足面子。", type: "A" },
+                    { text: "用數字、邏輯與鐵證直接戳破這個騙局，並冷靜幫他設局，看怎麼把本金全身而退。", type: "B" },
+                    { text: "委婉地提醒他要小心，如果他不聽，也不想過度干涉，尊重他的個人選擇。", type: "C" },
+                    { text: "直接搶過他的手機刪掉聯絡方式，劈頭痛罵他一頓：「你是腦袋進水嗎？清醒一點！」", type: "D" },
+                    { text: "幫他分析最壞的結果，一邊替他焦慮，一邊慶幸好险自己沒被捲進去。", type: "E" },
+                    { text: "一開始可能差點被他推銷成功也想加入，等發現是詐騙後會氣到想去砸了對方的公司。", type: "F" }
+                ]
+            },
+            {
+                id: 10,
+                text: "【題目十：高壓過後的週末放鬆】<br>情境：經歷了極度高壓、瘋狂加班/趕報告的一週後，你理想的週末放鬆方式是？",
+                options: [
+                    { text: "舉辦家宴或聚會，找各路好友、各界人脈來家裡熱鬧，聊天交流感情。", type: "A" },
+                    { text: "關掉手機，一個人待在房間看推理小說、下棋、打電動或看深度紀錄片，沉澱心智。", type: "B" },
+                    { text: "待在家裡做家事、陪家人、睡到自然醒，過著平淡、沒有任何波瀾的規律生活。", type: "C" },
+                    { text: "去戶外大自然爬山、露營、大汗淋漓一場，或者找藉口痛快大吃大喝一頓。", type: "D" },
+                    { text: "去報名專業進修課程、健身或規劃下週進度，雖然在放假但心裡還是停不下來地焦慮。", type: "E" },
+                    { text: "跟兄弟樂團表演、去夜店蹦迪、去改車、或者嘗試沒玩過的極限運動。", type: "F" }
+                ]
+            }
+        ];
+
+        // 6個角色的詳細分析報告
+        const characterProfiles = {
+            "A": {
+                name: "宋江",
+                nickname: "及時雨 (領袖型人格)",
+                analysis: "你具備極高的情商（EQ）與無與倫比的人格魅力。在任何團體中，你自覺或不自覺地都會站在居中統合的位置。你非常注重名聲、信用、人際關係網絡的維繫，擅長透過利益分配、情感投資收服人心。對你而言，一個人在不公體制下的最大籌碼是「社會資本」與「人脈整合力」。",
+                weakness: "因為過度在乎名聲、群眾評價與世俗建制的認同（如朝廷），有時可能會為了維持表面和諧或達成宏大理想，而選擇妥協、甚至委屈身邊真正支持你的夥伴，陷入「曲線自救卻被大系統吞噬」的兩難。",
+                advice: "領袖的魅力在於真誠。當面臨體制層級的博弈時，請確保你的「底線與原則」不被過度政治化，要好好保護最初支持你的真實知己，避免成為體制博弈下的犧牲品。"
+            },
+            "B": {
+                name: "吳用",
+                nickname: "智多星 (軍師型人格)",
+                analysis: "你是純粹的理性派，擁有極強的邏輯推理、局勢預測與大局掌控能力。在危機面前，你的情感波動極小，通常會瞬間將情緒壓抑下來，進入高度客觀的冷靜計算模式。你偏好在幕後操盤（如制定策略、資源調配、規避風險），而不是站在最前線。對你而言，謀略與利害關係重組是唯一有效的生存解法。",
+                weakness: "有時因為過度追求最優化或精密計算，容易將生活或同儕關係「工具化」，在人際交往中可能會顯得稍具距離感、不夠溫暖，甚至在直覺性、爆發力強的突發事件中反應不及。",
+                advice: "在人性的世界裡，1加1並不總是等於2。在追求最精密策略的同時，適時地展現你的軟弱或感性，能為你換來更多真正的忠誠與充滿溫度的革命情感。"
+            },
+            "C": {
+                name: "林沖",
+                nickname: "豹子頭 (隱忍型人格)",
+                analysis: "你是實力極強、敬業度極高的專業技術中堅。你極度看重安穩、體制保障與社會角色（如公務員、技術專家），通常做事安分守己，極具耐力。面對不公平，你的防禦機制是「病理式壓抑（Repression）」——為了維持家庭與社會身分的平穩，你常常強迫自己隱忍、退讓底線，對系統抱持著善良的幻想。",
+                weakness: "過度的忍耐並不會換來系統惡意者的慈悲。在底線被逼到退無可退、幻想徹底破滅的瞬間，你內心的火山會瞬間爆發，轉而訴諸極具破壞性的反撲，導致生活與關係的玉石俱焚。",
+                advice: "當不公義剛萌芽時，就應該勇敢地設立心理防禦與外在界線。「預防勝於治療」，別等自己被推到退無可退的懸崖邊，才被迫做出玉石俱焚的痛苦反擊。"
+            },
+            "D": {
+                name: "魯智深",
+                nickname: "花和尚 (俠義型人格)",
+                analysis: "你擁有純粹、高尚的道德直覺。你講求精神層面的絕對自由，最無法忍受虛偽、懦弱與強權欺凌弱小。當不公義在眼前發生時，你連零點一秒的猶豫都沒有，會直接以直觀的行動（甚至是暴力與衝擁）打破不公程序。你的俠義真摯坦蕩，能夠為周圍人帶來強烈的安全感。",
+                weakness: "因為行事太過直接坦率，有時會顯得過於魯莽或缺乏策略，在複雜、講究圓融規則與潛規則的官僚/體制社會中，容易被小人陷害或被利用成為博弈的棋子。",
+                advice: "勇敢是極為罕見的高貴特質，但在現代江湖中，適時地披上「策略與耐性」的護甲，能讓你在更安全地守護正義的同時，也保護好自己不被系統反噬。"
+            },
+            "E": {
+                name: "楊志",
+                nickname: "青面獸 (奮鬥型人格)",
+                analysis: "你是一個專業素質極高、自尊心極強的奮鬥者。你的人生動力源自對功名、階級翻身與自我價值的證明。然而，在樹大招風、甚至體制性剝削的生存壓力下，你容易陷入深深的焦慮與「懷才不遇」的悲情宿命感中。你不斷要求自己維持頂尖品質，不允許一絲出錯。",
+                weakness: "因為把成功和面子看得太重，遇到阻礙時容易將壓力轉為嚴重的自我懷疑或對周圍細節的過度焦慮，導致你的抗壓防線容易因為一個偶然的偶發事件而徹底破防。",
+                advice: "人生並非只有一條「功成名就」的既定軌道。適度地放鬆你緊繃的完美主義傾向，學會接受命運的隨機性，你的專業實力絕對能讓你在不同的土壤中開花結果。"
+            },
+            "F": {
+                name: "史進",
+                nickname: "九紋龍 (熱血型人格)",
+                analysis: "你代表了無懼無悔的少年心性！你開朗、大方、愛恨分明，對朋友能做到真正的「兩肋插刀、傾囊相助」。你對世界的認知比較直接單純，好玩與義氣是你行事的核心指引。雖然你目前在閱歷與經驗上可能稍嫌不足，但你身上的熱忱、坦誠與爆發力是團隊中不可或缺的熱血引擎。",
+                weakness: "因為心性直率單純，極容易因為一時衝動而被人挑撥、利用，或是在沒有經過周密規劃的情況下貿然投資或採取行動，導致自己與夥伴無端陷入財務、人際或法律危機。",
+                advice: "熱血與大方是你最討喜的魅力，但在做任何重大承諾或決定前，請養成「多停頓三秒、向你身邊的吳用或林沖型朋友諮詢意見」的習慣，這能讓你少走許多冤枉路。"
+            }
+        };
+
+        let currentQuestionIndex = 0;
+        let scores = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+        let qrcodeInstance = null;
+
+        // 初始化取得當前網址並渲染 QRCode
+        window.addEventListener('DOMContentLoaded', () => {
+            // 如果是在 iframe 或本地端運作，提供預設展示網址
+            let currentUrl = window.location.href;
+            if (currentUrl.startsWith('file://') || currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+                currentUrl = "https://github.com/TMU-Self-Learning/WaterMarginSurvival"; // 預設導引網址，供未部署前測試
+            }
+            
+            document.getElementById('current-url-display').innerText = currentUrl;
+
+            // 初始化生成 QR Code 實例
+            qrcodeInstance = new QRCode(document.getElementById("qrcode"), {
+                text: currentUrl,
+                width: 200,
+                height: 200,
+                colorDark : "#1a2a44", // 搭配我們海報的墨藍色
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        });
+
+        // 彈出/關閉 QR 模態視窗
+        function toggleQRModal(show) {
+            const modal = document.getElementById('qrcode-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // 複製目前網址
+        function copyCurrentUrl() {
+            const urlText = document.getElementById('current-url-display').innerText;
+            navigator.clipboard.writeText(urlText).then(() => {
+                showToast("網址已成功複製！");
+            }).catch(() => {
+                // 備用複製方案
+                const tempInput = document.createElement('input');
+                tempInput.value = urlText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast("網址已複製！");
+            });
+        }
+
+        // 開始測驗
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
+        }
+
+        // 隨機打亂陣列 (Fisher-Yates 演算法)
+        function shuffleArray(array) {
+            let cur = [...array];
+            for (let i = cur.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cur[i], cur[j]] = [cur[j], cur[i]];
+            }
+            return cur;
+        }
+
+        // 渲染題目與隨機打亂的選項
+        function showQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            
+            // 更新進度與百分比
+            const progressPercent = ((currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').innerText = `${currentQuestionIndex + 1} / ${questions.length}`;
+            document.getElementById('current-q-num').innerText = currentQuestionIndex + 1;
+            
+            // 寫入問題文字
+            document.getElementById('question-text').innerHTML = currentQuestion.text;
+            
+            // 取得打亂順序後的選項
+            const shuffledOptions = shuffleArray(currentQuestion.options);
+            
+            // 渲染選項
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            shuffledOptions.forEach((option, index) => {
+                const optionButton = document.createElement('button');
+                optionButton.className = "w-full text-left p-4 border border-stone-200 hover:border-vermilion hover:bg-vermilion-light/20 rounded-xl transition duration-200 flex items-start gap-4 focus:outline-none focus:ring-2 focus:ring-vermilion/40 bg-white shadow-sm";
+                optionButton.onclick = () => selectOption(option.type);
+                
+                // 字母代號 (僅做視覺引導)
+                const labelLetter = ['A', 'B', 'C', 'D', 'E', 'F'][index];
+                
+                optionButton.innerHTML = `
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-stone-50 text-stone-600 font-bold flex items-center justify-center font-serif border border-stone-200 text-xs">
+                        ${labelLetter}
+                    </span>
+                    <span class="text-stone-700 text-sm leading-relaxed pt-0.5">
+                        ${option.text}
+                    </span>
+                `;
+                optionsContainer.appendChild(optionButton);
+            });
+        }
+
+        // 選擇答案
+        function selectOption(type) {
+            scores[type]++;
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // 判定並呈現結果
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            // 找出最高分的角色
+            let maxScore = -1;
+            let finalArchetypeKey = 'A';
+            
+            // 遍歷找出最大值
+            for (const [key, val] of Object.entries(scores)) {
+                if (val > maxScore) {
+                    maxScore = val;
+                    finalArchetypeKey = key;
+                }
+            }
+            
+            const profile = characterProfiles[finalArchetypeKey];
+            
+            // 渲染文字內容
+            document.getElementById('result-archetype').innerText = profile.name;
+            document.getElementById('result-nickname').innerText = `外號：${profile.nickname}`;
+            document.getElementById('result-analysis').innerText = profile.analysis;
+            document.getElementById('result-weakness').innerText = profile.weakness;
+            document.getElementById('result-advice').innerText = profile.advice;
+            
+            // 渲染得分因子傾向長條圖
+            const barContainer = document.getElementById('score-analysis-bars');
+            barContainer.innerHTML = '';
+            
+            const nameMapping = { "A": "宋江", "B": "吳用", "C": "林沖", "D": "魯智深", "E": "楊志", "F": "史進" };
+            
+            for (const [key, score] of Object.entries(scores)) {
+                const percentage = Math.round((score / questions.length) * 100);
+                const isWinner = key === finalArchetypeKey;
+                
+                const barRow = document.createElement('div');
+                barRow.className = "space-y-1";
+                barRow.innerHTML = `
+                    <div class="flex justify-between text-xs font-serif ${isWinner ? 'font-bold text-vermilion' : 'text-stone-500'}">
+                        <span>${nameMapping[key]}</span>
+                        <span>${percentage}% (${score} 題)</span>
+                    </div>
+                    <div class="w-full bg-stone-200 h-2 rounded overflow-hidden">
+                        <div class="h-full rounded transition-all duration-500 ${isWinner ? 'bg-vermilion' : 'bg-ink-800/60'}" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                barContainer.appendChild(barRow);
+            }
+        }
+
+        // 重新開始
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            scores = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        // 複製與分享
+        function shareResult() {
+            let maxScore = -1;
+            let finalArchetypeKey = 'A';
+            for (const [key, val] of Object.entries(scores)) {
+                if (val > maxScore) {
+                    maxScore = val;
+                    finalArchetypeKey = key;
+                }
+            }
+            
+            const profile = characterProfiles[finalArchetypeKey];
+            const textToCopy = `【如果你是水滸人物：在不公社會中的生存抉擇】\n我的靈魂英雄原型是：${profile.name} (${profile.nickname})\n\n● 性格解析：${profile.analysis}\n\n● 生存建議：${profile.advice}\n\n歡迎一起來做測驗，找出你面臨不公平壓力時的真實本能流派！`;
+
+            // 建立臨時 textarea 進行複製
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            tempTextarea.style.position = 'fixed';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("報告複製成功！快去分享給組員與朋友吧！");
+                } else {
+                    showToast("複製失敗，請手動複製報告。");
+                }
+            } catch (err) {
+                showToast("複製失敗，請手動複製報告。");
+            }
+            
+            document.body.removeChild(tempTextarea);
+        }
+
+        // 提示框
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+
+```
